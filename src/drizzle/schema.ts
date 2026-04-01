@@ -1,8 +1,13 @@
-import { pgTable, serial, text, timestamp } from 'drizzle-orm/pg-core';
+import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 
-export const users = pgTable('users', {
-  id: serial('id').primaryKey(),
-  name: text('name').notNull(),
+// SQLite specific table definition
+export const users = sqliteTable('users', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
   email: text('email').notNull().unique(),
-  createdAt: timestamp('created_at').defaultNow(),
+  name: text('name').notNull().unique(),
+  password: text('password').notNull(),
+  // Using mode: 'timestamp' automatically converts SQLite integers to JS Date objects
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(
+    () => new Date(),
+  ),
 });

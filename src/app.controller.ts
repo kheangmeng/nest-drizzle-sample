@@ -5,6 +5,7 @@ import { AppService } from './app.service';
 class CreateUserDto {
   name: string;
   email: string;
+  password: string;
 }
 @Controller()
 export class AppController {
@@ -17,7 +18,13 @@ export class AppController {
 
   @Post()
   async createUser(@Body() body: CreateUserDto) {
-    return this.appService.createUser(body.name, body.email);
+    const user = {
+      name: body.name,
+      email: body.email,
+      password: body.password,
+    };
+
+    return this.appService.createUser(user);
   }
 
   @Get()

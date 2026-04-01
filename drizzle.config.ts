@@ -7,9 +7,9 @@ dotenv.config();
 export default defineConfig({
   schema: './src/drizzle/schema.ts',
   out: './drizzle',
-  dialect: 'postgresql',
+  dialect: 'sqlite',
   dbCredentials: {
-    url: process.env.DATABASE_URL || '',
+    url: process.env.DATABASE_URL || 'sqlite.db',
   },
   verbose: true,
   strict: true,
