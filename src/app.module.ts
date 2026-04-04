@@ -7,6 +7,7 @@ import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { FileUploadController } from './file-upload/file-upload.controller';
 import { LoggerMiddleware } from './logger/logger.middleware';
+import { UserController } from './users/users.controller';
 
 @Module({
   imports: [
@@ -17,7 +18,7 @@ import { LoggerMiddleware } from './logger/logger.middleware';
     UsersModule,
     AuthModule,
   ],
-  controllers: [AppController, FileUploadController],
+  controllers: [AppController, UserController, FileUploadController],
   providers: [AppService],
 })
 export class AppModule implements NestModule {
