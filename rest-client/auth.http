@@ -18,3 +18,31 @@ content-type: application/json
     "email": "jonhdoe@gmail.com",
     "password": "jonhdoe@Password"
 }
+
+###
+
+POST http://localhost:3000/auth/forgot-password HTTP/1.1
+content-type: application/json
+
+{
+    "email": "janedoe@gmail.com"
+}
+
+###
+
+POST http://localhost:3000/auth/reset-password HTTP/1.1
+content-type: application/json
+
+{
+    "token": "",
+    "password": "JANEdoe@123"
+}
+
+###
+
+POST http://localhost:3000/auth/refresh-token HTTP/1.1
+content-type: application/json
+
+{
+    "refreshToken": ""
+}

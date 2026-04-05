@@ -4,7 +4,7 @@ import { UsersService } from './users.service';
 import type { CreateUser } from './users';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
 import { createUserSchema } from './users.schema';
-import { CreateUserDto } from '../users/users.dto';
+import { CreateUserDto } from './users.dto';
 
 // Note: In production, create proper DTO classes with @nestjs/swagger and class-validator
 @ApiTags('users')

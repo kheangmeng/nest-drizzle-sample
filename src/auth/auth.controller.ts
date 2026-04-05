@@ -3,8 +3,21 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import type { AuthUser, CreateUser } from '../users/users';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
-import { createUserSchema, loginSchema } from '../users/users.schema';
-import { CreateUserDto, LoginDto } from '../users/users.dto';
+import {
+  createUserSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+  refreshTokenSchema,
+  loginSchema,
+} from '../users/users.schema';
+import {
+  CreateUserDto,
+  ForgotPasswordDto,
+  ResetPasswordDto,
+  RefreshTokenDto,
+  LoginDto,
+} from '../users/users.dto';
+import { UsersService } from 'src/users/users.service';
 
 // Note: In production, create proper DTO classes with @nestjs/swagger and class-validator
 @ApiTags('auth') // Groups these endpoints under "auth" in Swagger UI
@@ -12,7 +25,10 @@ import { CreateUserDto, LoginDto } from '../users/users.dto';
 export class AuthController {
   private readonly logger = new Logger(AuthController.name);
 
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly user: UsersService,
+  ) {}
 
   @Post('register')
   @ApiOperation({ summary: 'Register a new user' })
@@ -45,5 +61,36 @@ export class AuthController {
     this.logger.log(`Received login request for: ${body.email}`);
 
     return this.authService.login(user);
+  }
+
+  @Post('forgot-password')
+  @ApiOperation({ summary: 'Request password reset' })
+  @ApiBody({ type: ForgotPasswordDto })
+  @ApiResponse({ status: 200, description: 'Reset token generated.' })
+  @UsePipes(new ZodValidationPipe(forgotPasswordSchema))
+  async forgotPassword(@Body() body: ForgotPasswordDto) {
+    this.logger.log(`Forgot password request for: ${body.email}`);
+    const token = await this.user.forgotPassword(body.email);
+    console.log(token);
+    // In a real app, you would send this via email.
+    return { message: 'If the email exists, a reset link has been sent.', token };
+  }
+
+  @Post('reset-password')
+  @ApiOperation({ summary: 'Reset password using token' })
+  @ApiBody({ type: ResetPasswordDto })
+  @ApiResponse({ status: 200, description: 'Password reset successful.' })
+  @UsePipes(new ZodValidationPipe(resetPasswordSchema))
+  async resetPassword(@Body() body: ResetPasswordDto) {
+    await this.user.resetPassword(body.token, body.password);
+    return { message: 'Password has been successfully reset.' };
+  }
+
+  @Post('refresh-token')
+  @ApiOperation({ summary: 'Refresh session' })
+  @ApiBody({ type: RefreshTokenDto })
+  @UsePipes(new ZodValidationPipe(refreshTokenSchema))
+  async refresh(@Body() body: RefreshTokenDto) {
+    return this.authService.refreshToken(body.refreshToken);
   }
 }
