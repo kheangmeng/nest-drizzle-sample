@@ -24,4 +24,4 @@ export const createUserSchema = z
   .strict(); // .strict() prevents extra unknown fields from being submitted
 
 // Extract the TypeScript type from the schema
-export type CreateUserDto = z.infer<typeof createUserSchema>;
+export type CreateUser = z.infer<typeof createUserSchema>;
