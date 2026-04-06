@@ -3,12 +3,16 @@ import { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 import { eq, and, gt } from 'drizzle-orm';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'node:crypto';
+import { MailService } from '../mail/mail.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import * as schema from '../drizzle/schema';
 
 @Injectable()
 export class UsersService {
-  constructor(@Inject(DRIZZLE) private db: BetterSQLite3Database<typeof schema>) {}
+  constructor(
+    @Inject(DRIZZLE) private db: BetterSQLite3Database<typeof schema>,
+    private mailService: MailService, // Inject MailService here
+  ) {}
 
   async getUsers() {
     // Using Drizzle's Relational Queries API
@@ -115,7 +119,13 @@ export class UsersService {
         createdAt: schema.users.createdAt,
       });
 
-    return result[0];
+    const newUser = result[0];
+
+    if (newUser) {
+      await this.mailService.sendWelcomeEmail(newUser.email);
+    }
+
+    return newUser;
   }
 
   async update(id: number, data: Partial<typeof schema.users.$inferInsert>) {
