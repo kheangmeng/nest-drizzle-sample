@@ -8,6 +8,7 @@ import { AuthModule } from './auth/auth.module';
 import { FileUploadController } from './file-upload/file-upload.controller';
 import { LoggerMiddleware } from './logger/logger.middleware';
 import { UserController } from './users/users.controller';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { UserController } from './users/users.controller';
     DrizzleModule,
     UsersModule,
     AuthModule,
+    NotificationsModule,
   ],
   controllers: [AppController, UserController, FileUploadController],
   providers: [AppService],

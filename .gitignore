@@ -42,6 +42,7 @@ sqlite.db
 .env.test.local
 .env.production.local
 .env.local
+firebase-adminsdk.json
 
 # temp directory
 .temp

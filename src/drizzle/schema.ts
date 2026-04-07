@@ -6,6 +6,7 @@ export const users = sqliteTable('users', {
   email: text('email').notNull().unique(),
   name: text('name').notNull().unique(),
   password: text('password').notNull(),
+  fcmToken: text('fcm_token'),
   refreshToken: text('refresh_token'),
   resetToken: text('reset_token'),
   resetTokenExpiresAt: integer('reset_token_expires_at', { mode: 'timestamp' }),

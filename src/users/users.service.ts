@@ -6,12 +6,14 @@ import * as crypto from 'node:crypto';
 import { MailService } from '../mail/mail.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import * as schema from '../drizzle/schema';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class UsersService {
   constructor(
     @Inject(DRIZZLE) private db: BetterSQLite3Database<typeof schema>,
     private mailService: MailService, // Inject MailService here
+    private notificationsService: NotificationsService,
   ) {}
 
   async getUsers() {
@@ -130,5 +132,21 @@ export class UsersService {
 
   async update(id: number, data: Partial<typeof schema.users.$inferInsert>) {
     await this.db.update(schema.users).set(data).where(eq(schema.users.id, id));
+  }
+
+  async updateFcmToken(userId: number, token: string) {
+    return this.db.update(schema.users).set({ fcmToken: token }).where(eq(schema.users.id, userId));
+  }
+
+  async notifyUser(userId: number, title: string, body: string) {
+    const user = await this.db
+      .select({ fcmToken: schema.users.fcmToken })
+      .from(schema.users)
+      .where(eq(schema.users.id, userId))
+      .limit(1);
+
+    if (user[0]?.fcmToken) {
+      await this.notificationsService.sendPushNotification(user[0].fcmToken, title, body);
+    }
   }
 }
