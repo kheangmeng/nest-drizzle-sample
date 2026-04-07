@@ -1,5 +1,6 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'node:crypto';
 import { UsersService } from '../users/users.service';
@@ -7,9 +8,12 @@ import type { CreateUser, AuthUser } from '../users/users';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
+    private configService: ConfigService,
   ) {}
 
   async register({ email, password, name }: CreateUser) {
@@ -32,10 +36,31 @@ export class AuthService {
     });
   }
 
+  async validateOAuthLogin(googleUser: { email: string; googleId: string }) {
+    let user = await this.usersService.findByEmail(googleUser.email);
+
+    if (!user) {
+      // Create new user if they don't exist
+      this.logger.log(`Creating new user from Google OAuth: ${googleUser.email}`);
+      user = await this.usersService.create({
+        email: googleUser.email,
+        googleId: googleUser.googleId,
+      });
+    } else if (!user.googleId) {
+      // Link Google account if user already registered via email/password
+      this.logger.log(`Linking Google account to existing user: ${user.email}`);
+      await this.usersService.update(user.id, { googleId: googleUser.googleId });
+    }
+
+    const tokens = await this.getTokens(user.id, user.email);
+    await this.updateRefreshToken(user.id, tokens.refreshToken);
+    return tokens;
+  }
+
   async login({ email, password }: AuthUser) {
     const user = await this.usersService.findByEmail(email);
 
-    if (!user) {
+    if (!user || !user.password) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
@@ -62,6 +87,25 @@ export class AuthService {
         email: user.email,
       },
     };
+  }
+
+  private async getTokens(userId: number, email: string) {
+    const [accessToken, refreshToken] = await Promise.all([
+      this.jwtService.signAsync(
+        { sub: userId, email },
+        { secret: this.configService.get('JWT_SECRET'), expiresIn: '15m' },
+      ),
+      this.jwtService.signAsync(
+        { sub: userId, email },
+        { secret: this.configService.get('JWT_REFRESH_SECRET'), expiresIn: '7d' },
+      ),
+    ]);
+    return { accessToken, refreshToken };
+  }
+
+  private async updateRefreshToken(userId: number, refreshToken: string) {
+    const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
+    await this.usersService.update(userId, { refreshToken: hashedRefreshToken });
   }
 
   async refreshToken(refreshToken: string) {
