@@ -42,10 +42,12 @@ export class AuthService {
     if (!user) {
       // Create new user if they don't exist
       this.logger.log(`Creating new user from Google OAuth: ${googleUser.email}`);
-      user = await this.usersService.create({
+      const newUser = await this.usersService.createByOauth({
+        name: googleUser.email,
         email: googleUser.email,
         googleId: googleUser.googleId,
       });
+      user = await this.usersService.findByEmail(newUser.email);
     } else if (!user.googleId) {
       // Link Google account if user already registered via email/password
       this.logger.log(`Linking Google account to existing user: ${user.email}`);

@@ -109,7 +109,8 @@ export class UsersService {
 
     const saltRounds = 10;
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-    const hashedPassword: string = await bcrypt.hash(user.password, saltRounds);
+    let hashedPassword: string = '';
+    if (user.password) hashedPassword = await bcrypt.hash(user.password, saltRounds);
 
     const result = await this.db
       .insert(schema.users)
@@ -120,6 +121,27 @@ export class UsersService {
         password: schema.users.password,
         createdAt: schema.users.createdAt,
       });
+
+    const newUser = result[0];
+
+    if (newUser) {
+      await this.mailService.sendWelcomeEmail(newUser.email);
+    }
+
+    return newUser;
+  }
+
+  async createByOauth(user: typeof schema.users.$inferInsert) {
+    const existingUser = await this.findByEmail(user.email);
+    if (existingUser) {
+      throw new ConflictException('Email already in use');
+    }
+
+    const result = await this.db.insert(schema.users).values(user).returning({
+      email: schema.users.email,
+      name: schema.users.name,
+      createdAt: schema.users.createdAt,
+    });
 
     const newUser = result[0];
 
