@@ -11,6 +11,8 @@ import { UserController } from './users/users.controller';
 import { NotificationsModule } from './notifications/notifications.module';
 import { CategoriesModule } from './categories/categories.module';
 import { CategoryController } from './categories/categories.controller';
+import { ProductsModule } from './products/products.module';
+import { ProductController } from './products/products.controller';
 
 @Module({
   imports: [
@@ -21,9 +23,16 @@ import { CategoryController } from './categories/categories.controller';
     UsersModule,
     AuthModule,
     CategoriesModule,
+    ProductsModule,
     NotificationsModule,
   ],
-  controllers: [AppController, UserController, CategoryController, FileUploadController],
+  controllers: [
+    AppController,
+    UserController,
+    CategoryController,
+    ProductController,
+    FileUploadController,
+  ],
   providers: [AppService],
 })
 export class AppModule implements NestModule {

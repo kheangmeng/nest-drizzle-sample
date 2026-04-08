@@ -1,0 +1,15 @@
+POST http://localhost:3000/products HTTP/1.1
+content-type: application/json
+
+{
+    "name": "iPhone 17",
+    "description": "Apple iPhone 17",
+    "price": 1000,
+    "categoryId": 1,
+    "qty": 10
+}
+
+###
+
+GET http://localhost:3000/products HTTP/1.1
+content-type: application/json

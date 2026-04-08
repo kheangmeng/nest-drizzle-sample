@@ -24,17 +24,17 @@ export const categories = sqliteTable('categories', {
   updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 });
 
-// export const products = sqliteTable('products', {
-//   id: integer('id').primaryKey({ autoIncrement: true }),
-//   name: text('name').notNull().unique(),
-//   description: text('description'),
-//   price: integer('price').notNull(),
-//   qty: integer('qty').notNull(),
-//   image: text('image'),
-//   categoryId: integer('category_id').references(() => categories.id),
-//   createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
-//   updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
-// });
+export const products = sqliteTable('products', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  name: text('name').notNull().unique(),
+  description: text('description'),
+  price: integer('price').notNull(),
+  qty: integer('qty').notNull(),
+  image: text('image'),
+  categoryId: integer('category_id').references(() => categories.id),
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+});
 
 // export const orders = sqliteTable('orders', {
 //   id: integer('id').primaryKey({ autoIncrement: true }),
