@@ -13,4 +13,51 @@ export const users = sqliteTable('users', {
   resetTokenExpiresAt: integer('reset_token_expires_at', { mode: 'timestamp' }),
   // Using mode: 'timestamp' automatically converts SQLite integers to JS Date objects
   createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 });
+
+export const categories = sqliteTable('categories', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  name: text('name').notNull().unique(),
+  description: text('description'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+});
+
+// export const products = sqliteTable('products', {
+//   id: integer('id').primaryKey({ autoIncrement: true }),
+//   name: text('name').notNull().unique(),
+//   description: text('description'),
+//   price: integer('price').notNull(),
+//   qty: integer('qty').notNull(),
+//   image: text('image'),
+//   categoryId: integer('category_id').references(() => categories.id),
+//   createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+//   updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+// });
+
+// export const orders = sqliteTable('orders', {
+//   id: integer('id').primaryKey({ autoIncrement: true }),
+//   userId: integer('user_id').references(() => users.id),
+//   status: text('status').notNull(),
+//   createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+//   updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+// });
+
+// export const orderItems = sqliteTable('order_items', {
+//   id: integer('id').primaryKey({ autoIncrement: true }),
+//   orderId: integer('order_id').references(() => orders.id),
+//   productId: integer('product_id').references(() => products.id),
+//   quantity: integer('quantity').notNull(),
+//   createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+//   updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+// });
+
+// export const payments = sqliteTable('payments', {
+//   id: integer('id').primaryKey({ autoIncrement: true }),
+//   orderId: integer('order_id').references(() => orders.id),
+//   amount: integer('amount').notNull(),
+//   status: text('status').notNull(),
+//   createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+//   updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+// });

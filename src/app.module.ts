@@ -9,6 +9,8 @@ import { FileUploadController } from './file-upload/file-upload.controller';
 import { LoggerMiddleware } from './logger/logger.middleware';
 import { UserController } from './users/users.controller';
 import { NotificationsModule } from './notifications/notifications.module';
+import { CategoriesModule } from './categories/categories.module';
+import { CategoryController } from './categories/categories.controller';
 
 @Module({
   imports: [
@@ -18,9 +20,10 @@ import { NotificationsModule } from './notifications/notifications.module';
     DrizzleModule,
     UsersModule,
     AuthModule,
+    CategoriesModule,
     NotificationsModule,
   ],
-  controllers: [AppController, UserController, FileUploadController],
+  controllers: [AppController, UserController, CategoryController, FileUploadController],
   providers: [AppService],
 })
 export class AppModule implements NestModule {
