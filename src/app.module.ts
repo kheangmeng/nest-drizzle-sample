@@ -15,6 +15,8 @@ import { ProductsModule } from './products/products.module';
 import { ProductController } from './products/products.controller';
 import { OrdersModule } from './orders/orders.module';
 import { OrderController } from './orders/orders.controller';
+import { PaymentController } from './payments/payments.controller';
+import { PaymentsModule } from './payments/payments.module';
 
 @Module({
   imports: [
@@ -27,6 +29,7 @@ import { OrderController } from './orders/orders.controller';
     CategoriesModule,
     ProductsModule,
     OrdersModule,
+    PaymentsModule,
     NotificationsModule,
   ],
   controllers: [
@@ -35,6 +38,7 @@ import { OrderController } from './orders/orders.controller';
     CategoryController,
     ProductController,
     OrderController,
+    PaymentController,
     FileUploadController,
   ],
   providers: [AppService],

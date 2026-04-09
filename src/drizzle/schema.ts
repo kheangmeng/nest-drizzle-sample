@@ -53,11 +53,11 @@ export const orderItems = sqliteTable('order_items', {
   updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 });
 
-// export const payments = sqliteTable('payments', {
-//   id: integer('id').primaryKey({ autoIncrement: true }),
-//   orderId: integer('order_id').references(() => orders.id),
-//   amount: integer('amount').notNull(),
-//   status: text('status').notNull(),
-//   createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
-//   updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
-// });
+export const payments = sqliteTable('payments', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  orderId: integer('order_id').references(() => orders.id),
+  amount: integer('amount').notNull(),
+  status: text('status').notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+});

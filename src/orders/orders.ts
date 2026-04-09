@@ -4,7 +4,7 @@ export type OrderStatus = 'pending' | 'completed' | 'cancelled';
 
 export interface CreateOrder {
   userId: number;
-  status: string;
+  status: OrderStatus;
   items: CreateOrderItem[];
   createdAt: Date;
   updatedAt: Date;
