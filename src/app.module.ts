@@ -13,6 +13,8 @@ import { CategoriesModule } from './categories/categories.module';
 import { CategoryController } from './categories/categories.controller';
 import { ProductsModule } from './products/products.module';
 import { ProductController } from './products/products.controller';
+import { OrdersModule } from './orders/orders.module';
+import { OrderController } from './orders/orders.controller';
 
 @Module({
   imports: [
@@ -24,6 +26,7 @@ import { ProductController } from './products/products.controller';
     AuthModule,
     CategoriesModule,
     ProductsModule,
+    OrdersModule,
     NotificationsModule,
   ],
   controllers: [
@@ -31,6 +34,7 @@ import { ProductController } from './products/products.controller';
     UserController,
     CategoryController,
     ProductController,
+    OrderController,
     FileUploadController,
   ],
   providers: [AppService],
