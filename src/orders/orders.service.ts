@@ -7,12 +7,14 @@ import * as schema from '../drizzle/schema';
 import { OrderItemService } from '../order-items/order-items.service';
 import type { CreateOrder } from './orders';
 import type { CreateOrderItem } from '../order-items/order-items';
+import { ProductService } from 'src/products/products.service';
 
 @Injectable()
 export class OrderService {
   constructor(
     @Inject(DRIZZLE) private db: BetterSQLite3Database<typeof schema>,
     private orderItemService: OrderItemService,
+    private readonly productService: ProductService,
   ) {}
 
   async getOrders() {
@@ -50,12 +52,47 @@ export class OrderService {
       });
     }
     const res = await this.orderItemService.create(orderItems);
+    // find product and set qty
+    for (const item of order.items) {
+      const product = await this.productService.findById(item.productId);
+      if (product) {
+        await this.productService.update(item.productId, {
+          qty: product.qty - item.qty,
+        });
+      }
+    }
 
     return {
       ...ordered[0],
       items: res,
     };
     // });
+  }
+
+  async updateCancelledStatus(id: number) {
+    await this.db
+      .update(schema.orders)
+      .set({ status: 'cancelled' })
+      .where(eq(schema.orders.id, id));
+    // find product and set qty
+    const orderItems = await this.orderItemService.findByOrderId(id);
+    for (const item of orderItems) {
+      const product = await this.productService.findById(item.productId);
+      if (product) {
+        await this.productService.update(item.productId, {
+          qty: product.qty + item.qty,
+        });
+      }
+    }
+    // await this.db.delete(schema.orderItems).where(eq(schema.orderItems.orderId, id));
+
+    return {
+      message: 'Order cancelled successfully.',
+    };
+  }
+
+  async updateCompletedStatus(id: number, data: Partial<typeof schema.orders.$inferInsert>) {
+    await this.db.update(schema.orders).set(data).where(eq(schema.orders.id, id));
   }
 
   async update(id: number, data: Partial<typeof schema.orders.$inferInsert>) {

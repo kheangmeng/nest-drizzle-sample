@@ -23,8 +23,20 @@ export class OrderItemService {
     return result[0] || null;
   }
 
-  create(orders: (typeof schema.orderItems.$inferInsert)[]) {
-    return this.db.insert(schema.orderItems).values(orders).returning({
+  async findByOrderId(orderId: number) {
+    const result = await this.db
+      .select()
+      .from(schema.orderItems)
+      .where(eq(schema.orderItems.orderId, orderId));
+    return result || null;
+  }
+
+  create(
+    orders: (typeof schema.orderItems.$inferInsert)[],
+    db?: BetterSQLite3Database<typeof schema>,
+  ) {
+    const dbToUse = db || this.db;
+    return dbToUse.insert(schema.orderItems).values(orders).returning({
       id: schema.orderItems.id,
       orderId: schema.orderItems.orderId,
       productId: schema.orderItems.productId,

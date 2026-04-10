@@ -2,9 +2,9 @@ POST http://localhost:3000/products HTTP/1.1
 content-type: application/json
 
 {
-    "name": "iPhone 17",
-    "description": "Apple iPhone 17",
-    "price": 1000,
+    "name": "iphone SE",
+    "description": "Apple iphone product",
+    "price": 599,
     "categoryId": 1,
     "qty": 10
 }
@@ -13,3 +13,13 @@ content-type: application/json
 
 GET http://localhost:3000/products HTTP/1.1
 content-type: application/json
+
+
+###
+
+PATCH http://localhost:3000/products/1 HTTP/1.1
+content-type: application/json
+
+{
+    "qty": 16
+}

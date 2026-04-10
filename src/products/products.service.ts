@@ -14,8 +14,9 @@ export class ProductService {
     });
   }
 
-  async findById(id: number) {
-    const result = await this.db
+  async findById(id: number, db?: BetterSQLite3Database<typeof schema>) {
+    const dbToUse = db || this.db;
+    const result = await dbToUse
       .select()
       .from(schema.products)
       .where(eq(schema.products.id, id))
@@ -37,8 +38,17 @@ export class ProductService {
     return result[0];
   }
 
-  async update(id: number, data: Partial<typeof schema.products.$inferInsert>) {
-    await this.db.update(schema.products).set(data).where(eq(schema.products.id, id));
+  async update(
+    id: number,
+    data: Partial<typeof schema.products.$inferInsert>,
+    db?: BetterSQLite3Database<typeof schema>,
+  ) {
+    const dbToUse = db || this.db;
+    await dbToUse.update(schema.products).set(data).where(eq(schema.products.id, id));
+
+    return {
+      message: 'Product updated successfully.',
+    };
   }
 
   async delete(id: number) {

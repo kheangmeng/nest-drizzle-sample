@@ -1,4 +1,14 @@
-import { Body, Controller, Post, Get, UsePipes, Logger, Patch, Delete } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Post,
+  Get,
+  UsePipes,
+  Logger,
+  Patch,
+  Delete,
+  Param,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { ProductService } from './products.service';
 import type { CreateProduct, UpdateProduct } from './products';
@@ -45,12 +55,12 @@ export class ProductController {
     return this.product.create(product);
   }
 
-  @Patch()
+  @Patch(':id')
   @ApiOperation({ summary: 'Update a product' })
   @ApiBody({ type: UpdateProductDto })
   @ApiResponse({ status: 200, description: 'Product successfully updated.' })
-  @UsePipes(new ZodValidationPipe(updateProductSchema))
-  async updateProduct(@Body() body: UpdateProduct) {
+  // @UsePipes(new ZodValidationPipe(updateProductSchema))
+  async updateProduct(@Param('id') id: string, @Body() body: UpdateProduct) {
     const product = {
       name: body.name,
       description: body.description,
@@ -61,7 +71,7 @@ export class ProductController {
     };
     this.logger.log(`Update product request for: ${body.name}`);
 
-    return this.product.update(body.id, product);
+    return this.product.update(Number(id), product);
   }
 
   @Delete()

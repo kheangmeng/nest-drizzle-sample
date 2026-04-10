@@ -6,16 +6,12 @@ content-type: application/json
     "status": "pending",
     "items": [
         {
-            "productId": 1,
-            "qty": 8
-        },
-        {
             "productId": 2,
-            "qty": 3
+            "qty": 2
         },
         {
-            "productId": 3,
-            "qty": 15
+            "productId": 1,
+            "qty": 4
         }
     ]
 }
@@ -24,3 +20,13 @@ content-type: application/json
 
 GET http://localhost:3000/orders HTTP/1.1
 content-type: application/json
+
+
+###
+
+PATCH  http://localhost:3000/orders/cancelled HTTP/1.1
+content-type: application/json
+
+{
+    "id": 17
+}

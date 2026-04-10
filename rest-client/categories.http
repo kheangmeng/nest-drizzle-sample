@@ -2,8 +2,8 @@ POST http://localhost:3000/categories HTTP/1.1
 content-type: application/json
 
 {
-    "name": "Food",
-    "description": "Snack, confectionery, drinks"
+    "name": "laptop",
+    "description": "all kinds of laptop."
 }
 
 ###

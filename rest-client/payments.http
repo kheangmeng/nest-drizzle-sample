@@ -2,12 +2,31 @@ POST http://localhost:3000/payments HTTP/1.1
 content-type: application/json
 
 {
-    "orderId": 2,
-    "status": "paid",
-    "amount": 800
+    "orderId": 20,
+    "status": "pending",
+    "amount": 2200
 }
 
 ###
 
 GET http://localhost:3000/payments HTTP/1.1
 content-type: application/json
+
+
+###
+
+PATCH  http://localhost:3000/payments/cancelled HTTP/1.1
+content-type: application/json
+
+{
+    "id": 6
+}
+
+###
+
+PATCH  http://localhost:3000/payments/paid HTTP/1.1
+content-type: application/json
+
+{
+    "id": 7
+}

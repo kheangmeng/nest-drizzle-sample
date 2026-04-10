@@ -63,6 +63,24 @@ export class PaymentController {
     return this.payment.update(body.id, payment);
   }
 
+  @Patch('cancelled')
+  @ApiOperation({ summary: 'Cancel payment' })
+  @ApiResponse({ status: 200, description: 'Payment successfully cancelled.' })
+  cancelPayment(@Body() body: { id: number }) {
+    this.logger.log(`Update payment cancelled request for: ${body.id}`);
+
+    return this.payment.cancelledPayment(body.id);
+  }
+
+  @Patch('paid')
+  @ApiOperation({ summary: 'Pay payment' })
+  @ApiResponse({ status: 200, description: 'Payment successfully paid.' })
+  payPayment(@Body() body: { id: number }) {
+    this.logger.log(`Update payment paid request for: ${body.id}`);
+
+    return this.payment.updatePaidStatus(body.id);
+  }
+
   @Delete()
   @ApiOperation({ summary: 'Delete a payment' })
   @ApiBody({ type: DeletePaymentDto })

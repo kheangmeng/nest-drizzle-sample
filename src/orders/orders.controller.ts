@@ -62,7 +62,16 @@ export class OrderController {
     return this.order.update(body.id, order);
   }
 
-  @Delete()
+  @Patch('cancelled')
+  @ApiOperation({ summary: 'Cancel order' })
+  @ApiResponse({ status: 200, description: 'Order successfully cancelled.' })
+  cancelOrder(@Body() body: { id: number }) {
+    this.logger.log(`Update order cancelled request for: ${body.id}`);
+
+    return this.order.updateCancelledStatus(body.id);
+  }
+
+  @Delete(':id')
   @ApiOperation({ summary: 'Delete a order' })
   @ApiBody({ type: DeleteOrderDto })
   @ApiResponse({ status: 200, description: 'Order successfully deleted.' })
