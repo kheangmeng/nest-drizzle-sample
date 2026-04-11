@@ -6,6 +6,9 @@ export const users = sqliteTable('users', {
   email: text('email').notNull().unique(),
   name: text('name').notNull().unique(),
   password: text('password'),
+  role: text('role', { enum: ['admin', 'staff', 'user'] })
+    .default('user')
+    .notNull(),
   googleId: text('google_id').unique(),
   fcmToken: text('fcm_token'),
   refreshToken: text('refresh_token'),
