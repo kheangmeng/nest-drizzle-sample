@@ -8,23 +8,30 @@ import {
   Patch,
   Delete,
   Param,
+  UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { ProductService } from './products.service';
 import type { CreateProduct, UpdateProduct } from './products';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
 import { createProductSchema, updateProductSchema } from './products.schema';
 import { CreateProductDto, UpdateProductDto, DeleteProductDto } from './products.dto';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { Roles } from '../common/decorators/roles.decorator';
 
 // Note: In production, create proper DTO classes with @nestjs/swagger and class-validator
 @ApiTags('products')
+@ApiBearerAuth()
 @Controller('products')
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class ProductController {
   private readonly logger = new Logger(ProductController.name);
 
   constructor(private readonly product: ProductService) {}
 
   @Get()
+  @Roles('admin', 'staff')
   @ApiOperation({ summary: 'Product list' })
   @ApiBody({ type: CreateProductDto })
   @ApiResponse({ status: 200, description: 'Successfully logged in.' })
@@ -35,6 +42,7 @@ export class ProductController {
   }
 
   @Post()
+  @Roles('admin', 'staff')
   @ApiOperation({ summary: 'Create a new product' })
   @ApiBody({ type: CreateProductDto })
   @ApiResponse({ status: 201, description: 'Product successfully created.' })
@@ -56,6 +64,7 @@ export class ProductController {
   }
 
   @Patch(':id')
+  @Roles('admin', 'staff')
   @ApiOperation({ summary: 'Update a product' })
   @ApiBody({ type: UpdateProductDto })
   @ApiResponse({ status: 200, description: 'Product successfully updated.' })
@@ -75,6 +84,7 @@ export class ProductController {
   }
 
   @Delete()
+  @Roles('admin')
   @ApiOperation({ summary: 'Delete a product' })
   @ApiBody({ type: DeleteProductDto })
   @ApiResponse({ status: 200, description: 'Product successfully deleted.' })

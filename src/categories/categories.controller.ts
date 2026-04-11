@@ -1,20 +1,36 @@
-import { Body, Controller, Post, Get, UsePipes, Logger, Patch, Delete } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Post,
+  Get,
+  UsePipes,
+  Logger,
+  Patch,
+  Delete,
+  UseGuards,
+} from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { CategoryService } from './categories.service';
 import type { CreateCategory, UpdateCategory } from './categories';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
 import { createCategorySchema, updateCategorySchema } from './categories.schema';
 import { CreateCategoryDto, UpdateCategoryDto, DeleteCategoryDto } from './categories.dto';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { Roles } from '../common/decorators/roles.decorator';
 
 // Note: In production, create proper DTO classes with @nestjs/swagger and class-validator
 @ApiTags('categories')
+@ApiBearerAuth()
 @Controller('categories')
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class CategoryController {
   private readonly logger = new Logger(CategoryController.name);
 
   constructor(private readonly category: CategoryService) {}
 
   @Get()
+  @Roles('user', 'admin', 'staff')
   @ApiOperation({ summary: 'Category list' })
   @ApiBody({ type: CreateCategoryDto })
   @ApiResponse({ status: 200, description: 'Successfully logged in.' })
@@ -25,6 +41,7 @@ export class CategoryController {
   }
 
   @Post()
+  @Roles('admin', 'staff')
   @ApiOperation({ summary: 'Create a new category' })
   @ApiBody({ type: CreateCategoryDto })
   @ApiResponse({ status: 201, description: 'Category successfully created.' })
@@ -42,6 +59,7 @@ export class CategoryController {
   }
 
   @Patch()
+  @Roles('admin')
   @ApiOperation({ summary: 'Update a category' })
   @ApiBody({ type: UpdateCategoryDto })
   @ApiResponse({ status: 200, description: 'Category successfully updated.' })
@@ -57,6 +75,7 @@ export class CategoryController {
   }
 
   @Delete()
+  @Roles('admin')
   @ApiOperation({ summary: 'Delete a category' })
   @ApiBody({ type: DeleteCategoryDto })
   @ApiResponse({ status: 200, description: 'Category successfully deleted.' })

@@ -1,20 +1,36 @@
-import { Body, Controller, Post, Get, UsePipes, Logger, Patch, Delete } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Post,
+  Get,
+  UsePipes,
+  Logger,
+  Patch,
+  Delete,
+  UseGuards,
+} from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { OrderService } from './orders.service';
 import type { CreateOrder, UpdateOrder } from './orders';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
 import { createOrderSchema, updateOrderSchema } from './orders.schema';
 import { CreateOrderDto, UpdateOrderDto, DeleteOrderDto } from './orders.dto';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { Roles } from '../common/decorators/roles.decorator';
 
 // Note: In production, create proper DTO classes with @nestjs/swagger and class-validator
 @ApiTags('orders')
+@ApiBearerAuth()
 @Controller('orders')
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class OrderController {
   private readonly logger = new Logger(OrderController.name);
 
   constructor(private readonly order: OrderService) {}
 
   @Get()
+  @Roles('admin', 'staff')
   @ApiOperation({ summary: 'Order list' })
   @ApiBody({ type: CreateOrderDto })
   @ApiResponse({ status: 200, description: 'Successfully logged in.' })
@@ -25,6 +41,7 @@ export class OrderController {
   }
 
   @Post()
+  @Roles('admin', 'staff')
   @ApiOperation({ summary: 'Create a new order' })
   @ApiBody({ type: CreateOrderDto })
   @ApiResponse({ status: 201, description: 'Order successfully created.' })
@@ -45,6 +62,7 @@ export class OrderController {
   }
 
   @Patch()
+  @Roles('admin')
   @ApiOperation({ summary: 'Update a order' })
   @ApiBody({ type: UpdateOrderDto })
   @ApiResponse({ status: 200, description: 'Order successfully updated.' })
@@ -63,6 +81,7 @@ export class OrderController {
   }
 
   @Patch('cancelled')
+  @Roles('admin', 'staff')
   @ApiOperation({ summary: 'Cancel order' })
   @ApiResponse({ status: 200, description: 'Order successfully cancelled.' })
   cancelOrder(@Body() body: { id: number }) {
@@ -72,6 +91,7 @@ export class OrderController {
   }
 
   @Delete(':id')
+  @Roles('admin')
   @ApiOperation({ summary: 'Delete a order' })
   @ApiBody({ type: DeleteOrderDto })
   @ApiResponse({ status: 200, description: 'Order successfully deleted.' })

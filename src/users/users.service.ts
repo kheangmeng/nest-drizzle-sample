@@ -171,4 +171,8 @@ export class UsersService {
       await this.notificationsService.sendPushNotification(user[0].fcmToken, title, body);
     }
   }
+
+  async delete(id: number) {
+    await this.db.delete(schema.users).where(eq(schema.users.id, id));
+  }
 }

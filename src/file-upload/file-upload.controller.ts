@@ -1,15 +1,29 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { Controller, Post, UseInterceptors, UploadedFile, UploadedFiles } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  UseInterceptors,
+  UploadedFile,
+  UploadedFiles,
+  UseGuards,
+} from '@nestjs/common';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { Roles } from '../common/decorators/roles.decorator';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
+@ApiBearerAuth()
 @Controller('uploads')
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class FileUploadController {
   // Single file upload
   @Post('single')
+  @Roles('admin', 'staff')
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
@@ -42,6 +56,7 @@ export class FileUploadController {
 
   // Multiple files upload
   @Post('multiple')
+  @Roles('admin', 'staff')
   @UseInterceptors(
     FilesInterceptor('files', 10, {
       storage: diskStorage({

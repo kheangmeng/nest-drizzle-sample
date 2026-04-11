@@ -1,5 +1,8 @@
+@token = Bearer ...
+
 POST http://localhost:3000/payments HTTP/1.1
 content-type: application/json
+Authorization: {{token}}
 
 {
     "orderId": 20,
@@ -11,12 +14,14 @@ content-type: application/json
 
 GET http://localhost:3000/payments HTTP/1.1
 content-type: application/json
+Authorization: {{token}}
 
 
 ###
 
 PATCH  http://localhost:3000/payments/cancelled HTTP/1.1
 content-type: application/json
+Authorization: {{token}}
 
 {
     "id": 6
@@ -26,6 +31,7 @@ content-type: application/json
 
 PATCH  http://localhost:3000/payments/paid HTTP/1.1
 content-type: application/json
+Authorization: {{token}}
 
 {
     "id": 7

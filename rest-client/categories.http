@@ -1,8 +1,11 @@
+@token = Bearer ...
+
 POST http://localhost:3000/categories HTTP/1.1
 content-type: application/json
+Authorization: {{token}}
 
 {
-    "name": "laptop",
+    "name": "mobile",
     "description": "all kinds of laptop."
 }
 
@@ -10,3 +13,4 @@ content-type: application/json
 
 GET http://localhost:3000/categories HTTP/1.1
 content-type: application/json
+Authorization: {{token}}
