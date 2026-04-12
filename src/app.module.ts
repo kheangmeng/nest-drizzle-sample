@@ -1,5 +1,6 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { BullModule } from '@nestjs/bull';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DrizzleModule } from './drizzle/drizzle.module';
@@ -22,6 +23,17 @@ import { PaymentsModule } from './payments/payments.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+    }),
+    // Global Redis configuration for Bull Queues
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        redis: {
+          host: configService.get<string>('REDIS_HOST') || 'localhost',
+          port: configService.get<number>('REDIS_PORT') || 6379,
+        },
+      }),
     }),
     DrizzleModule,
     UsersModule,

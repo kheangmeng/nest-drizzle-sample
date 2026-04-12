@@ -2,6 +2,8 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 import { eq } from 'drizzle-orm';
+import { InjectQueue } from '@nestjs/bull';
+import { type Queue } from 'bull';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import * as schema from '../drizzle/schema';
 import type { CreatePayment } from './payments';
@@ -12,6 +14,7 @@ export class PaymentService {
   constructor(
     @Inject(DRIZZLE) private db: BetterSQLite3Database<typeof schema>,
     private orderService: OrderService,
+    @InjectQueue('payments-queue') private paymentsQueue: Queue,
   ) {}
 
   async getPayments() {
@@ -49,6 +52,16 @@ export class PaymentService {
     if (result[0].status === 'paid') {
       await this.orderService.update(payment.orderId, { status: 'completed' });
     }
+
+    // We push the webhook to a queue. This allows our API to return a
+    // "200 OK" to Stripe immediately so Stripe doesn't timeout and retry.
+    // await this.paymentsQueue.add('process-webhook', result[0], {
+    //   attempts: 5, // Important: if our DB is down, we can retry verifying the payment
+    //   backoff: {
+    //     type: 'exponential', // Retries will wait 1s, 2s, 4s, 8s...
+    //     delay: 1000,
+    //   },
+    // });
 
     return {
       ...result[0],

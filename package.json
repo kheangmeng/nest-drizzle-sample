@@ -6,7 +6,7 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "build": "nest build",
+    "build": "nest build && cp -r src/mail/templates dist/src/mail/",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
@@ -24,6 +24,7 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
+    "@nestjs/bull": "^11.0.4",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.3",
     "@nestjs/core": "^11.0.1",
@@ -33,6 +34,7 @@
     "@nestjs/swagger": "^11.2.6",
     "bcrypt": "^6.0.0",
     "better-sqlite3": "^12.8.0",
+    "bull": "^4.16.5",
     "drizzle-orm": "^0.45.2",
     "firebase-admin": "^13.7.0",
     "handlebars": "^4.7.9",
@@ -57,6 +59,7 @@
     "@nestjs/testing": "^11.0.1",
     "@types/bcrypt": "^6.0.0",
     "@types/better-sqlite3": "^7.6.13",
+    "@types/bull": "^3.15.9",
     "@types/express": "^5.0.0",
     "@types/jest": "^30.0.0",
     "@types/multer": "^2.1.0",

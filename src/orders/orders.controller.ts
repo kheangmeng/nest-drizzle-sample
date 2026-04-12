@@ -30,7 +30,7 @@ export class OrderController {
   constructor(private readonly order: OrderService) {}
 
   @Get()
-  @Roles('admin', 'staff')
+  @Roles('user', 'admin', 'staff')
   @ApiOperation({ summary: 'Order list' })
   @ApiBody({ type: CreateOrderDto })
   @ApiResponse({ status: 200, description: 'Successfully logged in.' })
@@ -41,7 +41,7 @@ export class OrderController {
   }
 
   @Post()
-  @Roles('admin', 'staff')
+  @Roles('user', 'admin', 'staff')
   @ApiOperation({ summary: 'Create a new order' })
   @ApiBody({ type: CreateOrderDto })
   @ApiResponse({ status: 201, description: 'Order successfully created.' })

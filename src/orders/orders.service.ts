@@ -2,12 +2,15 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 import { eq } from 'drizzle-orm';
+import { InjectQueue } from '@nestjs/bull';
+import { type Queue } from 'bull';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import * as schema from '../drizzle/schema';
 import { OrderItemService } from '../order-items/order-items.service';
 import type { CreateOrder } from './orders';
 import type { CreateOrderItem } from '../order-items/order-items';
 import { ProductService } from 'src/products/products.service';
+import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class OrderService {
@@ -15,6 +18,8 @@ export class OrderService {
     @Inject(DRIZZLE) private db: BetterSQLite3Database<typeof schema>,
     private orderItemService: OrderItemService,
     private readonly productService: ProductService,
+    private mailService: MailService,
+    @InjectQueue('orders-queue') private ordersQueue: Queue,
   ) {}
 
   async getOrders() {
@@ -61,6 +66,22 @@ export class OrderService {
         });
       }
     }
+
+    void this.mailService.sendOrderedEmail('jonhdoe@gmail.com');
+
+    // // Job A: Send order confirmation email
+    // await this.ordersQueue.add(
+    //   'send-order-confirmation',
+    //   { orderId: ordered[0].id, userId: order.userId },
+    //   { attempts: 3, backoff: 5000 }, // Retry 3 times if email fails, wait 5s between retries
+    // );
+
+    // // Job B: Reserve inventory or alert warehouse
+    // await this.ordersQueue.add(
+    //   'sync-inventory',
+    //   { orderId: ordered[0].id, items: order.items },
+    //   { priority: 1 }, // Higher priority
+    // );
 
     return {
       ...ordered[0],

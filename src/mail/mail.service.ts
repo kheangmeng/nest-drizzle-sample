@@ -3,7 +3,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 import * as handlebars from 'handlebars';
-import * as fs from 'fs';
+import { existsSync, promises as fs } from 'fs';
 import * as path from 'path';
 
 @Injectable()
@@ -23,24 +23,24 @@ export class MailService {
     });
   }
 
-  private compileTemplate(templateName: string, data: any): string {
+  private async compileTemplate(templateName: string, data: any): Promise<string> {
     const templatePath = path.join(__dirname, 'templates', `${templateName}.html`);
 
     // In production build, ensure these files are copied to the dist folder
     // via 'assets' config in nest-cli.json
-    if (!fs.existsSync(templatePath)) {
+    if (!existsSync(templatePath)) {
       this.logger.error(`Template not found: ${templatePath}`);
       return `<p>Error: Template ${templateName} not found.</p>`;
     }
 
-    const templateSource = fs.readFileSync(templatePath, 'utf8');
+    const templateSource = await fs.readFile(templatePath, 'utf8');
     const template = handlebars.compile(templateSource);
     return template(data);
   }
 
   async sendWelcomeEmail(email: string) {
     const name = 'John Doe';
-    const html = this.compileTemplate('welcome', {
+    const html = await this.compileTemplate('welcome', {
       name,
       email,
       dashboardUrl: 'https://myapp.com/dashboard',
@@ -57,6 +57,28 @@ export class MailService {
       this.logger.log(`Welcome email sent to: ${email}`);
     } catch (error) {
       this.logger.error(`Failed to send welcome email to ${email}`, error);
+    }
+  }
+
+  async sendOrderedEmail(email: string) {
+    const name = 'John Doe';
+    const html = await this.compileTemplate('ordered', {
+      name,
+      email,
+      dashboardUrl: 'https://myapp.com/dashboard',
+    });
+    const mailOptions = {
+      from: this.configService.get('MAIL_FROM'),
+      to: email,
+      subject: `Ordered, ${name}!`,
+      html,
+    };
+
+    try {
+      await this.transporter.sendMail(mailOptions);
+      this.logger.log(`ordered email sent to: ${email}`);
+    } catch (error) {
+      this.logger.error(`Failed to send ordered email to ${email}`, error);
     }
   }
 
