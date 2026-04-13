@@ -18,6 +18,7 @@ import { OrdersModule } from './orders/orders.module';
 import { OrderController } from './orders/orders.controller';
 import { PaymentController } from './payments/payments.controller';
 import { PaymentsModule } from './payments/payments.module';
+import { TelegramModule } from './telegram/telegram.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { PaymentsModule } from './payments/payments.module';
     OrdersModule,
     PaymentsModule,
     NotificationsModule,
+    TelegramModule,
   ],
   controllers: [
     AppController,

@@ -8,12 +8,14 @@ import { DRIZZLE } from '../drizzle/drizzle.module';
 import * as schema from '../drizzle/schema';
 import type { CreatePayment } from './payments';
 import { OrderService } from 'src/orders/orders.service';
+import { TelegramService } from '../telegram/telegram.service';
 
 @Injectable()
 export class PaymentService {
   constructor(
     @Inject(DRIZZLE) private db: BetterSQLite3Database<typeof schema>,
     private orderService: OrderService,
+    private telegramService: TelegramService,
     @InjectQueue('payments-queue') private paymentsQueue: Queue,
   ) {}
 
@@ -51,6 +53,10 @@ export class PaymentService {
 
     if (result[0].status === 'paid') {
       await this.orderService.update(payment.orderId, { status: 'completed' });
+
+      void this.telegramService.sendMessage(
+        `🆕 <b>New Payment Initiated</b>\n\n💰 Amount: ${payment.amount} ${'USD'}\n🆔 ID: <code>${payment.orderId}</code>`,
+      );
     }
 
     // We push the webhook to a queue. This allows our API to return a
