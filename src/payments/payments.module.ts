@@ -5,6 +5,7 @@ import { PaymentController } from './payments.controller';
 import { OrdersModule } from 'src/orders/orders.module';
 import { PaymentsProcessor } from './payments.processor';
 import { MailModule } from '../mail/mail.module';
+import { StripeModule } from '../stripe/stripe.module';
 
 @Module({
   providers: [PaymentService, PaymentsProcessor],
@@ -12,6 +13,7 @@ import { MailModule } from '../mail/mail.module';
   imports: [
     MailModule,
     OrdersModule,
+    StripeModule,
     BullModule.registerQueue({
       name: 'payments-queue',
     }),

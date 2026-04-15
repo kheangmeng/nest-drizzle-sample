@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
   Body,
   Controller,
@@ -8,7 +11,11 @@ import {
   Patch,
   Delete,
   UseGuards,
+  Req,
+  BadRequestException,
+  Headers,
 } from '@nestjs/common';
+import type { RawBodyRequest } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { PaymentService } from './payments.service';
 import type { CreatePayment, UpdatePayment } from './payments';
@@ -18,6 +25,7 @@ import { CreatePaymentDto, UpdatePaymentDto, DeletePaymentDto } from './payments
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
+import { StripeService } from '../stripe/stripe.service';
 
 // Note: In production, create proper DTO classes with @nestjs/swagger and class-validator
 @ApiTags('payments')
@@ -27,7 +35,10 @@ import { Roles } from '../common/decorators/roles.decorator';
 export class PaymentController {
   private readonly logger = new Logger(PaymentController.name);
 
-  constructor(private readonly payment: PaymentService) {}
+  constructor(
+    private readonly payment: PaymentService,
+    private readonly stripeService: StripeService,
+  ) {}
 
   @Get()
   @Roles('admin', 'staff')
@@ -111,5 +122,36 @@ export class PaymentController {
     this.logger.log(`Delete payment request for: ${body.id}`);
 
     return this.payment.delete(body.id);
+  }
+
+  @Post('create-intent')
+  @UseGuards(JwtAuthGuard) // Protect this endpoint so only logged-in users can pay
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Create a Stripe Payment Intent' })
+  createIntent(@Body() body: CreatePaymentDto) {
+    return this.payment.initiatePayment(String(body.orderId), body.amount);
+  }
+
+  // WARNING: Do NOT use global DTO validation pipes or auth guards on this endpoint.
+  // Stripe needs to send raw data unauthenticated. The signature acts as the "auth".
+  @Post('webhook')
+  @ApiOperation({ summary: 'Stripe Webhook endpoint (Public)' })
+  handleWebhook(
+    @Headers('stripe-signature') signature: string,
+    @Req() req: RawBodyRequest<Request>,
+  ) {
+    if (!signature) {
+      throw new BadRequestException('Missing stripe-signature header');
+    }
+
+    if (!req.rawBody) {
+      throw new BadRequestException('Missing request body');
+    }
+
+    // 1. Verify the signature using the raw unparsed body
+    const event = this.stripeService.constructEventFromPayload(signature, req.rawBody);
+
+    // 2. Pass the verified event to the service (which pushes it to the Bull Queue)
+    return this.payment.handleStripeWebhook(event);
   }
 }

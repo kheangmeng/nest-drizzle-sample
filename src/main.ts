@@ -11,6 +11,7 @@ async function bootstrap() {
     // Replace the default NestJS logger with Winston completely from startup
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     logger: WinstonModule.createLogger(winstonConfig),
+    rawBody: true,
   });
 
   // 1. Configure Swagger Options
