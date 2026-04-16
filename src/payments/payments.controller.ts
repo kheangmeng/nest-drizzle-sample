@@ -21,11 +21,17 @@ import { PaymentService } from './payments.service';
 import type { CreatePayment, UpdatePayment } from './payments';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
 import { createPaymentSchema, updatePaymentSchema } from './payments.schema';
-import { CreatePaymentDto, UpdatePaymentDto, DeletePaymentDto } from './payments.dto';
+import {
+  CreatePaymentDto,
+  UpdatePaymentDto,
+  DeletePaymentDto,
+  CapturePaypalDto,
+} from './payments.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { StripeService } from '../stripe/stripe.service';
+import { PaypalService } from '../paypal/paypal.service';
 
 // Note: In production, create proper DTO classes with @nestjs/swagger and class-validator
 @ApiTags('payments')
@@ -38,6 +44,7 @@ export class PaymentController {
   constructor(
     private readonly payment: PaymentService,
     private readonly stripeService: StripeService,
+    private readonly paypalService: PaypalService,
   ) {}
 
   @Get()
@@ -153,5 +160,43 @@ export class PaymentController {
 
     // 2. Pass the verified event to the service (which pushes it to the Bull Queue)
     return this.payment.handleStripeWebhook(event);
+  }
+
+  @Post('paypal/create-order')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Create a PayPal Order' })
+  createPaypalOrder(@Body() body: CreatePaymentDto) {
+    return this.payment.initiatePaypalPayment(String(body.orderId), body.amount);
+  }
+
+  @Post('paypal/capture-order')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Capture an approved PayPal Order' })
+  capturePaypalOrder(@Body() body: CapturePaypalDto) {
+    return this.payment.capturePaypalPayment(body.paypalOrderId);
+  }
+
+  @Post('paypal/webhook')
+  @ApiOperation({ summary: 'PayPal Webhook (Public)' })
+  async handlePaypalWebhook(
+    @Headers() headers: Record<string, string>,
+    @Req() req: RawBodyRequest<Request>,
+  ) {
+    if (!req.rawBody) {
+      throw new BadRequestException('Missing request body');
+    }
+
+    // 1. Ask PayPal to verify the signature cryptographically
+    const isValid = await this.paypalService.verifyWebhookSignature(headers, req.rawBody);
+
+    if (!isValid) {
+      throw new BadRequestException('Invalid PayPal Webhook Signature');
+    }
+
+    // 2. If valid, parse the body and process it
+    const event = JSON.parse(req.rawBody.toString('utf8'));
+    return this.payment.handlePaypalWebhook(event);
   }
 }

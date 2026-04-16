@@ -11,6 +11,7 @@ import type { CreatePayment } from './payments';
 import { OrderService } from 'src/orders/orders.service';
 import { TelegramService } from '../telegram/telegram.service';
 import { StripeService } from '../stripe/stripe.service';
+import { PaypalService } from '../paypal/paypal.service';
 
 @Injectable()
 export class PaymentService {
@@ -21,6 +22,7 @@ export class PaymentService {
     private orderService: OrderService,
     private telegramService: TelegramService,
     private stripeService: StripeService,
+    private paypalService: PaypalService,
     @InjectQueue('payments-queue') private paymentsQueue: Queue,
   ) {}
 
@@ -118,6 +120,7 @@ export class PaymentService {
     await this.db.delete(schema.payments).where(eq(schema.payments.id, id));
   }
 
+  // --- STRIPE LOGIC ---
   async initiatePayment(orderId: string, amount: number) {
     this.logger.log(`Initiating payment for Order ${orderId} for amount ${amount}`);
 
@@ -133,11 +136,48 @@ export class PaymentService {
 
     // Push to the Bull Queue we created earlier
     // This allows the controller to return a 200 OK to Stripe immediately
-    await this.paymentsQueue.add('process-webhook', event, {
-      attempts: 5,
-      backoff: { type: 'exponential', delay: 1000 },
+    await this.paymentsQueue.add(
+      'process-webhook',
+      { provider: 'stripe', event },
+      {
+        attempts: 5,
+        backoff: { type: 'exponential', delay: 1000 },
+      },
+    );
+
+    return { received: true };
+  }
+
+  // --- PAYPAL LOGIC ---
+  initiatePaypalPayment(orderId: string, amount: number) {
+    this.logger.log(`Initiating PayPal payment for Order ${orderId}`);
+    return this.paypalService.createOrder(amount, orderId);
+  }
+
+  async capturePaypalPayment(paypalOrderId: string) {
+    this.logger.log(`Capturing PayPal order: ${paypalOrderId}`);
+    const captureData = await this.paypalService.capturePayment(paypalOrderId);
+
+    // We can also push this to the queue for fulfillment, or handle it inline
+    // since the user is actively waiting for this request to finish.
+    await this.paymentsQueue.add('process-webhook', {
+      provider: 'paypal-capture',
+      event: captureData,
     });
 
+    return { status: 'SUCCESS', captureData };
+  }
+
+  async handlePaypalWebhook(event: any) {
+    this.logger.log(`Received verified PayPal webhook event: ${event.event_type}. Queuing...`);
+    await this.paymentsQueue.add(
+      'process-webhook',
+      { provider: 'paypal', event },
+      {
+        attempts: 5,
+        backoff: { type: 'exponential', delay: 1000 },
+      },
+    );
     return { received: true };
   }
 }

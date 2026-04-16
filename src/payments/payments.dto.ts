@@ -22,3 +22,7 @@ export class DeletePaymentDto {
 export class GetPaymentDto {
   id!: number;
 }
+
+export class CapturePaypalDto {
+  paypalOrderId!: string;
+}

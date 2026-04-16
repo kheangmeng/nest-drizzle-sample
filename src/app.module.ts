@@ -20,6 +20,7 @@ import { PaymentController } from './payments/payments.controller';
 import { PaymentsModule } from './payments/payments.module';
 import { TelegramModule } from './telegram/telegram.module';
 import { StripeModule } from './stripe/stripe.module';
+import { PaypalModule } from './paypal/paypal.module';
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { StripeModule } from './stripe/stripe.module';
     NotificationsModule,
     TelegramModule,
     StripeModule,
+    PaypalModule,
   ],
   controllers: [
     AppController,
