@@ -1,0 +1,14 @@
+@token = Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsImVtYWlsIjoiam9uaGRvZUBnbWFpbC5jb20iLCJpYXQiOjE3NzY0OTQ1OTMsImV4cCI6MTc3NjQ5ODE5M30.2RooxWucJIfcPK3wM7BLqJwZ9DCISPRN9xDxBUh2_-s
+
+
+###
+
+GET http://localhost:3000/reports/export/sales HTTP/1.1
+content-type: application/json
+Authorization: {{token}}
+
+###
+
+GET http://localhost:3000/reports/sales HTTP/1.1
+content-type: application/json
+Authorization: {{token}}
