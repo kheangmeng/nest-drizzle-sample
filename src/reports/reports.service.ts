@@ -11,8 +11,9 @@ export class ReportsService {
 
   constructor(@Inject(DRIZZLE) private db: BetterSQLite3Database<typeof schema>) {}
 
-  async getSaleReport() {
+  async getSaleReport(req: { limit?: string; offset?: string }) {
     this.logger.log('Fetching data for sales report...');
+    const { limit, offset } = req || { limit: 10, offset: 0 };
 
     // 1. Fetch data using Drizzle ORM Joins
     // Note: Adjust the schema references below if your table variables differ slightly
@@ -31,6 +32,8 @@ export class ReportsService {
         })
         // Start from orderItems since the report focuses on line-item details
         .from(schema.orderItems)
+        .limit(Number(limit))
+        .offset(Number(offset))
         .leftJoin(schema.products, eq(schema.orderItems.productId, schema.products.id))
         .leftJoin(schema.categories, eq(schema.products.categoryId, schema.categories.id))
         .leftJoin(schema.orders, eq(schema.orderItems.orderId, schema.orders.id))
@@ -39,7 +42,7 @@ export class ReportsService {
   }
 
   async generateSalesReport(): Promise<Buffer> {
-    const reportData = await this.getSaleReport();
+    const reportData = await this.getSaleReport({});
     this.logger.log(`Found ${reportData.length} records. Generating Excel file...`);
 
     // 2. Initialize Excel Workbook and Worksheet

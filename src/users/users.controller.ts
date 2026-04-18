@@ -8,6 +8,7 @@ import {
   UsePipes,
   UseGuards,
   Logger,
+  Query,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { UsersService } from './users.service';
@@ -36,10 +37,10 @@ export class UserController {
   @ApiOperation({ summary: 'User list' })
   @ApiBody({ type: CreateUserDto })
   @ApiResponse({ status: 200, description: 'Successfully logged in.' })
-  async getAllUsers() {
+  async getAllUsers(@Query() query: { limit?: string; offset?: string }) {
     this.logger.log(`Get users request`);
 
-    return this.user.getUsers();
+    return this.user.getUsers(query);
   }
 
   @Post()

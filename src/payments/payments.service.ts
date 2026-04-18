@@ -26,8 +26,12 @@ export class PaymentService {
     @InjectQueue('payments-queue') private paymentsQueue: Queue,
   ) {}
 
-  async getPayments() {
+  async getPayments(req: { limit?: string; offset?: string }) {
+    const { limit, offset } = req || { limit: 10, offset: 0 };
+
     return this.db.query.payments.findMany({
+      limit: Number(limit),
+      offset: Number(offset),
       orderBy: (payments, { desc }) => [desc(payments.createdAt)],
     });
   }

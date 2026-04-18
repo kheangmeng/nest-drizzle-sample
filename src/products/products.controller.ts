@@ -9,6 +9,7 @@ import {
   Delete,
   Param,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { ProductService } from './products.service';
@@ -35,10 +36,10 @@ export class ProductController {
   @ApiOperation({ summary: 'Product list' })
   @ApiBody({ type: CreateProductDto })
   @ApiResponse({ status: 200, description: 'Successfully logged in.' })
-  async getAllProducts() {
+  async getAllProducts(@Query() query: { limit?: string; offset?: string }) {
     this.logger.log(`Get products request`);
 
-    return this.product.getProducts();
+    return this.product.getProducts(query);
   }
 
   @Post()

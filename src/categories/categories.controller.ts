@@ -8,6 +8,7 @@ import {
   Patch,
   Delete,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { CategoryService } from './categories.service';
@@ -34,10 +35,10 @@ export class CategoryController {
   @ApiOperation({ summary: 'Category list' })
   @ApiBody({ type: CreateCategoryDto })
   @ApiResponse({ status: 200, description: 'Successfully logged in.' })
-  async getAllCategories() {
+  async getAllCategories(@Query() query: { limit?: string; offset?: string }) {
     this.logger.log(`Get categories request`);
 
-    return this.category.getCategories();
+    return this.category.getCategories(query);
   }
 
   @Post()

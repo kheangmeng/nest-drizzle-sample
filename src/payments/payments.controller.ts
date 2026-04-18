@@ -14,6 +14,7 @@ import {
   Req,
   BadRequestException,
   Headers,
+  Query,
 } from '@nestjs/common';
 import type { RawBodyRequest } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
@@ -52,10 +53,10 @@ export class PaymentController {
   @ApiOperation({ summary: 'Payment list' })
   @ApiBody({ type: CreatePaymentDto })
   @ApiResponse({ status: 200, description: 'Successfully logged in.' })
-  async getAllPayments() {
+  async getAllPayments(@Query() query: { limit?: string; offset?: string }) {
     this.logger.log(`Get payments request`);
 
-    return this.payment.getPayments();
+    return this.payment.getPayments(query);
   }
 
   @Post()

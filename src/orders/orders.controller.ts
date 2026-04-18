@@ -8,6 +8,7 @@ import {
   Patch,
   Delete,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { OrderService } from './orders.service';
@@ -34,10 +35,10 @@ export class OrderController {
   @ApiOperation({ summary: 'Order list' })
   @ApiBody({ type: CreateOrderDto })
   @ApiResponse({ status: 200, description: 'Successfully logged in.' })
-  async getAllOrders() {
+  async getAllOrders(@Query() query: { limit?: string; offset?: string }) {
     this.logger.log(`Get orders request`);
 
-    return this.order.getOrders();
+    return this.order.getOrders(query);
   }
 
   @Post()

@@ -8,8 +8,12 @@ import * as schema from '../drizzle/schema';
 export class ProductService {
   constructor(@Inject(DRIZZLE) private db: BetterSQLite3Database<typeof schema>) {}
 
-  async getProducts() {
+  async getProducts(req: { limit?: string; offset?: string }) {
+    const { limit, offset } = req || { limit: 10, offset: 0 };
+
     return this.db.query.products.findMany({
+      limit: Number(limit),
+      offset: Number(offset),
       orderBy: (products, { desc }) => [desc(products.createdAt)],
     });
   }

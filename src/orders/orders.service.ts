@@ -22,8 +22,12 @@ export class OrderService {
     @InjectQueue('orders-queue') private ordersQueue: Queue,
   ) {}
 
-  async getOrders() {
+  async getOrders(req: { limit?: string; offset?: string }) {
+    const { limit, offset } = req || { limit: 10, offset: 0 };
+
     return this.db.query.orders.findMany({
+      limit: Number(limit),
+      offset: Number(offset),
       orderBy: (orders, { desc }) => [desc(orders.createdAt)],
     });
   }

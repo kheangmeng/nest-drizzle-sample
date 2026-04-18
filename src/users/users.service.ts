@@ -16,9 +16,13 @@ export class UsersService {
     private notificationsService: NotificationsService,
   ) {}
 
-  async getUsers() {
+  async getUsers(req: { limit?: string; offset?: string }) {
+    const { limit, offset } = req || { limit: 10, offset: 0 };
+
     // Using Drizzle's Relational Queries API
     return this.db.query.users.findMany({
+      limit: Number(limit),
+      offset: Number(offset),
       orderBy: (users, { desc }) => [desc(users.createdAt)],
     });
   }

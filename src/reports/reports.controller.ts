@@ -1,4 +1,4 @@
-import { Controller, Get, Res, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, Res, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { type Response } from 'express';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
@@ -19,8 +19,8 @@ export class ReportsController {
   @Get('sales')
   @Roles('admin', 'staff')
   @ApiOperation({ summary: 'Full sales report (Admin/Staff)' })
-  async salesReport() {
-    return this.reportsService.getSaleReport();
+  async salesReport(@Query() query: { limit?: string; offset?: string }) {
+    return this.reportsService.getSaleReport(query);
   }
 
   @Get('sales/export')
