@@ -1,4 +1,5 @@
 import { Controller, Get, Res, UseGuards } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { type Response } from 'express';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ReportsService } from './reports.service';
@@ -14,6 +15,7 @@ import { Roles } from '../common/decorators/roles.decorator';
 export class ReportsController {
   constructor(private readonly reportsService: ReportsService) {}
 
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   @Get('sales')
   @Roles('admin', 'staff')
   @ApiOperation({ summary: 'Full sales report (Admin/Staff)' })

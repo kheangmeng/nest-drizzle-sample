@@ -1,6 +1,9 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { BullModule } from '@nestjs/bull';
+import { CacheModule } from '@nestjs/cache-manager';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DrizzleModule } from './drizzle/drizzle.module';
@@ -39,6 +42,17 @@ import { ReportsModule } from './reports/reports.module';
         },
       }),
     }),
+    CacheModule.register({
+      isGlobal: true,
+      ttl: 5000, // Time-to-live in milliseconds (v5+)
+      max: 100, // Maximum number of items in cache
+    }),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000, // Time to live in milliseconds (e.g., 60 seconds)
+        limit: 10, // Maximum number of requests within the ttl
+      },
+    ]),
     DrizzleModule,
     UsersModule,
     AuthModule,
@@ -61,7 +75,13 @@ import { ReportsModule } from './reports/reports.module';
     PaymentController,
     FileUploadController,
   ],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
