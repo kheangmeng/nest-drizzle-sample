@@ -4,6 +4,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { BullModule } from '@nestjs/bull';
 import { CacheModule } from '@nestjs/cache-manager';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DrizzleModule } from './drizzle/drizzle.module';
@@ -25,6 +26,7 @@ import { TelegramModule } from './telegram/telegram.module';
 import { StripeModule } from './stripe/stripe.module';
 import { PaypalModule } from './paypal/paypal.module';
 import { ReportsModule } from './reports/reports.module';
+import { TasksModule } from './tasks/tasks.module';
 
 @Module({
   imports: [
@@ -53,6 +55,8 @@ import { ReportsModule } from './reports/reports.module';
         limit: 10, // Maximum number of requests within the ttl
       },
     ]),
+    ScheduleModule.forRoot(),
+    TasksModule,
     DrizzleModule,
     UsersModule,
     AuthModule,
