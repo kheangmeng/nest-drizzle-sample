@@ -1,0 +1,12 @@
+node_modules
+dist
+data
+*.db
+!sqlite.db
+.log
+npm-debug.log
+docker-compose.yml
+Dockerfile
+.git
+.gitignore
+.npm-store

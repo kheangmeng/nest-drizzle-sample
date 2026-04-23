@@ -1,0 +1,28 @@
+services:
+  app:
+    build:
+      context: .
+      target: runner
+    container_name: nestjs_prod
+    ports:
+      - '3000:3000'
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+    volumes:
+      # This volume ensures the DB survives container updates
+      - prod_data:/app/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: nest_redis_prod
+    restart: always
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_prod_data:/data
+
+volumes:
+  redis_prod_data:
+  prod_data:
+
