@@ -31,6 +31,11 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+      
+      - name: Create secrets files
+        run: |
+          echo "${{ secrets.ENV_FILE_CONTENT }}" > .env
+          echo "${{ secrets.FIREBASE_SDK_CONTENT }}" > firebase-adminsdk.json
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
