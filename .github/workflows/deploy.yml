@@ -88,6 +88,11 @@ jobs:
             else
                 echo "docker-compose already installed."
             fi
+
+            # Create secrets files directly on the VPS
+            echo "${{ secrets.ENV_FILE_CONTENT }}" > ~/nest-app/.env
+            echo "${{ secrets.FIREBASE_SDK_CONTENT }}" > ~/nest-app/firebase-adminsdk.json
+
             # 1. Ensure deployment directory exists
             DEPLOY_DIR="$HOME/nest-app"
             if [ ! -d "$DEPLOY_DIR" ]; then
