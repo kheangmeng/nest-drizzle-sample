@@ -76,8 +76,27 @@ jobs:
           username: ${{ secrets.GCP_USERNAME }}
           key: ${{ secrets.GCP_SSH_KEY }}
           script: |
-            # 1. Ensure directory exists
-            mkdir -p ~/nest-app
+            set -e # Exit immediately if a command exits with a non-zero status.
+            # Install docker-compose if not already installed
+            if ! command -v docker-compose &> /dev/null
+            then
+                echo "docker-compose not found, installing..."
+                # Download a specific version of Docker Compose (v2.26.1 is a recent stable version)
+                sudo curl -L "https://github.com/docker/compose/releases/download/v2.26.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+                sudo chmod +x /usr/local/bin/docker-compose
+                echo "docker-compose installed."
+            else
+                echo "docker-compose already installed."
+            fi
+            # 1. Ensure deployment directory exists
+            DEPLOY_DIR="$HOME/nest-app"
+            if [ ! -d "$DEPLOY_DIR" ]; then
+                echo "Directory $DEPLOY_DIR does not exist. Creating it..."
+                mkdir -p "$DEPLOY_DIR"
+                echo "Directory $DEPLOY_DIR created."
+            else
+                echo "Directory $DEPLOY_DIR already exists."
+            fi
             cd ~/nest-app
 
             # 2. Login to GitHub Container Registry on the server
