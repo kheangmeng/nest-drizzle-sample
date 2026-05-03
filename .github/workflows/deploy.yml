@@ -1,14 +1,13 @@
-name: CI/CD Pipeline to GCP
+name: Bare Metal CI/CD to GCP
 
 on:
   push:
-    branches: [ "main" ] # Triggers when you push to the main branch
-
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+    branches: [ "main" ]
 
 jobs:
+  # ==========================================
+  # JOB 1: CONTINUOUS INTEGRATION (CI)
+  # ==========================================
   ci:
     name: Build & Test
     runs-on: ubuntu-latest
@@ -19,104 +18,85 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '24.15.0'
+          node-version: '22'
           cache: 'npm'
 
       - name: Install dependencies
-        # npm ci is like npm install, but strictly follows package-lock.json
-        run: npm ci 
+        run: npm ci
 
       - name: Run Unit Tests
-        # Ensure you have tests written! If this fails, the deploy stops here.
         run: npm run test
 
-  build-and-deploy:
-    name: Build Docker & Deploy to GCP
+      - name: Build NestJS App
+        run: npm run build
+
+      # We upload the compiled output so the CD job can use it
+      # This prevents us from having to run TypeScript on the small GCP server
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-build
+          path: |
+            dist/
+            package.json
+            package-lock.json
+            drizzle/
+            drizzle.config.ts
+
+  # ==========================================
+  # JOB 2: CONTINUOUS DEPLOYMENT (CD)
+  # ==========================================
+  cd:
+    name: Deploy to GCP via PM2
     needs: ci
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Log in to the Container registry
-        uses: docker/login-action@v3
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
         with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          name: app-build
+          path: ./app-deploy
 
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@v5
+      # Secure Copy Protocol (SCP) transfers the files to the VPS
+      - name: Copy files to VPS via SCP
+        uses: appleboy/scp-action@v0.1.7
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-      
-      - name: Create secrets files
-        run: |
-          echo "${{ secrets.ENV_FILE_CONTENT }}" > .env
-          echo "${{ secrets.FIREBASE_SDK_CONTENT }}" > firebase-adminsdk.json
+          host: ${{ secrets.GCP_HOST }}
+          username: ${{ secrets.GCP_USERNAME }}
+          key: ${{ secrets.GCP_SSH_KEY }}
+          source: "./app-deploy/*"
+          target: "~/nest-app"
+          strip_components: 1
 
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          # Converts repository name to lowercase (required by Docker)
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-          labels: ${{ steps.meta.outputs.labels }}
-
-      - name: Deploy to Google Cloud VPS
+      # Connect via SSH to run installation and start the app
+      - name: Execute Deployment Scripts via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.GCP_HOST }}
           username: ${{ secrets.GCP_USERNAME }}
           key: ${{ secrets.GCP_SSH_KEY }}
           script: |
-            set -e # Exit immediately if a command exits with a non-zero status.
-            # Install docker-compose if not already installed
-            if ! command -v docker-compose &> /dev/null
-            then
-                echo "docker-compose not found, installing..."
-                # Download a specific version of Docker Compose (v2.26.1 is a recent stable version)
-                sudo curl -L "https://github.com/docker/compose/releases/download/v2.26.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-                sudo chmod +x /usr/local/bin/docker-compose
-                echo "docker-compose installed."
-            else
-                echo "docker-compose already installed."
-            fi
-
-            # Create secrets files directly on the VPS
-            echo "${{ secrets.ENV_FILE_CONTENT }}" > ~/nest-app/.env
-            echo "${{ secrets.FIREBASE_SDK_CONTENT }}" > ~/nest-app/firebase-adminsdk.json
-
-            # 1. Ensure deployment directory exists
-            DEPLOY_DIR="$HOME/nest-app"
-            if [ ! -d "$DEPLOY_DIR" ]; then
-                echo "Directory $DEPLOY_DIR does not exist. Creating it..."
-                mkdir -p "$DEPLOY_DIR"
-                echo "Directory $DEPLOY_DIR created."
-            else
-                echo "Directory $DEPLOY_DIR already exists."
-            fi
             cd ~/nest-app
+            
+            # 1. Inject Secrets into the server
+            echo "${{ secrets.ENV_FILE_CONTENT }}" > .env
+            echo "${{ secrets.FIREBASE_SDK_CONTENT }}" > firebase-adminsdk.json
 
-            # 2. Login to GitHub Container Registry on the server
-            echo ${{ secrets.GH_PAT }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            # 2. Install ONLY production dependencies (ignores devDependencies)
+            npm ci --omit=dev
 
-            # 3. Pull the latest docker-compose.prod.yml directly from GitHub
-            curl -H "Authorization: token ${{ secrets.GH_PAT }}" \
-                 -H "Accept: application/vnd.github.v3.raw" \
-                 -O -L https://api.github.com/repos/${{ github.repository }}/contents/docker-compose.prod.yml
+            # 3. Apply any database schema changes
+            npm run db:push
 
-            # 4. Pull the new Docker image
-            docker-compose -f docker-compose.prod.yml pull
-
-            # 5. Restart the containers (creates new containers without downtime)
-            docker-compose -f docker-compose.prod.yml up -d
-
-            # 6. Cleanup old unused images to save disk space
-            docker image prune -f
+            # 4. Start or Restart the app with PM2
+            pm2 describe nest-api > /dev/null
+            if [ $? -eq 0 ]; then
+              echo "App is already running. Restarting..."
+              pm2 restart nest-api
+            else
+              echo "App is not running. Starting..."
+              pm2 start dist/main.js --name "nest-api"
+            fi
+            
+            # Save the PM2 list so it automatically restarts if the VPS reboots
+            pm2 save
