@@ -1,4 +1,4 @@
-name: Bare Metal CI/CD to GCP
+name: CI/CD (Server-Side Build)
 
 on:
   push:
@@ -9,7 +9,7 @@ jobs:
   # JOB 1: CONTINUOUS INTEGRATION (CI)
   # ==========================================
   ci:
-    name: Build & Test
+    name: Test Code
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -18,77 +18,71 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '24'
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci 
 
       - name: Run Unit Tests
         run: npm run test
 
-      - name: Build NestJS App
-        run: npm run build
-
-      # We upload the compiled output so the CD job can use it
-      # This prevents us from having to run TypeScript on the small GCP server
-      - name: Upload Build Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-build
-          path: |
-            dist/
-            package.json
-            package-lock.json
-            drizzle/
-            drizzle.config.ts
-
   # ==========================================
-  # JOB 2: CONTINUOUS DEPLOYMENT (CD)
+  # JOB 2: CONTINUOUS DEPLOYMENT & SERVER BUILD
   # ==========================================
   cd:
-    name: Deploy to GCP via PM2
-    needs: ci
+    name: Build & Deploy on Server
+    needs: ci # Waits for the 'ci' job to pass
     runs-on: ubuntu-latest
     steps:
-      - name: Download Build Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: app-build
-          path: ./app-deploy
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      # Secure Copy Protocol (SCP) transfers the files to the VPS
-      - name: Copy files to VPS via SCP
-        uses: appleboy/scp-action@v0.1.7
+      - name: Compress source code
+        # Packages all files EXCEPT .git and node_modules into a single archive
+        run: tar -czvf app-source.tar.gz --exclude=.git --exclude=node_modules .
+
+      - name: Upload Source Archive via SCP
+        uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.GCP_HOST }}
           username: ${{ secrets.GCP_USERNAME }}
           key: ${{ secrets.GCP_SSH_KEY }}
-          source: "./app-deploy/*"
-          target: "~/nest-app"
-          strip_components: 1
+          source: "app-source.tar.gz"
+          target: "~/" # Uploads to the home directory temporarily
 
-      # Connect via SSH to run installation and start the app
-      - name: Execute Deployment Scripts via SSH
+      - name: Execute Build and Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.GCP_HOST }}
           username: ${{ secrets.GCP_USERNAME }}
           key: ${{ secrets.GCP_SSH_KEY }}
           script: |
+            # 1. Create app directory and extract the source code
+            mkdir -p ~/nest-app
+            tar -xzvf ~/app-source.tar.gz -C ~/nest-app
+            
+            # 2. Clean up the archive to save disk space
+            rm ~/app-source.tar.gz
+            
+            # Navigate into the app
             cd ~/nest-app
             
-            # 1. Inject Secrets into the server
+            # 3. Inject Secrets
             echo "${{ secrets.ENV_FILE_CONTENT }}" > .env
             echo "${{ secrets.FIREBASE_SDK_CONTENT }}" > firebase-adminsdk.json
 
-            # 2. Install ONLY production dependencies (ignores devDependencies)
-            npm ci --omit=dev
+            # 4. Install ALL dependencies 
+            # (We cannot use --omit=dev here because NestJS requires the TypeScript compiler to build)
+            npm install
 
-            # 3. Apply any database schema changes
+            # 5. Build the project natively on the VPS
+            npm run build
+
+            # 6. Apply database migrations
             npm run db:push
 
-            # 4. Start or Restart the app with PM2
+            # 7. Start or Restart with PM2
             pm2 describe nest-api > /dev/null
             if [ $? -eq 0 ]; then
               echo "App is already running. Restarting..."
