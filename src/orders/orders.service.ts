@@ -23,11 +23,12 @@ export class OrderService {
   ) {}
 
   async getOrders(req: { limit?: string; offset?: string }) {
-    const { limit, offset } = req || { limit: 10, offset: 0 };
+    const limit = Number(req?.limit) || 10;
+    const offset = Number(req?.offset) || 0;
 
     return this.db.query.orders.findMany({
-      limit: Number(limit),
-      offset: Number(offset),
+      limit,
+      offset,
       orderBy: (orders, { desc }) => [desc(orders.createdAt)],
     });
   }
@@ -42,36 +43,43 @@ export class OrderService {
   }
 
   async create(order: CreateOrder) {
-    // const result = await this.db.transaction(async (tx) => {
-    const ordered = await this.db.insert(schema.orders).values(order).returning({
+    // return await this.db.transaction(async (tx) => {
+    const [newOrder] = await this.db.insert(schema.orders).values(order).returning({
       id: schema.orders.id,
       userId: schema.orders.userId,
       status: schema.orders.status,
       createdAt: schema.orders.createdAt,
     });
 
-    const orderItems: CreateOrderItem[] = [];
-    for (const item of order.items) {
-      orderItems.push({
-        orderId: ordered[0].id,
-        productId: item.productId,
-        qty: item.qty,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      });
-    }
-    const res = await this.orderItemService.create(orderItems);
-    // find product and set qty
+    const orderItems: CreateOrderItem[] = order.items.map((item) => ({
+      orderId: newOrder.id,
+      productId: item.productId,
+      qty: item.qty,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }));
+
+    const savedItems = await this.orderItemService.create(orderItems);
+
+    // Update inventory sequentially (consider batching for performance)
     for (const item of order.items) {
       const product = await this.productService.findById(item.productId);
-      if (product) {
-        await this.productService.update(item.productId, {
-          qty: product.qty - item.qty,
-        });
+      if (!product || product.qty < item.qty) {
+        throw new Error(`Insufficient stock for product ID: ${item.productId}`);
       }
+      await this.productService.update(item.productId, {
+        qty: product.qty - item.qty,
+      });
     }
 
-    void this.mailService.sendOrderedEmail('jonhdoe@gmail.com');
+    // void this.mailService.sendOrderedEmail('jonhdoe@gmail.com');
+
+    // Enqueue background job
+    // await this.ordersQueue.add(
+    //   'send-order-confirmation',
+    //   { orderId: newOrder.id, userId: order.userId },
+    //   { attempts: 3, backoff: 5000 },
+    // );
 
     // // Job A: Send order confirmation email
     // await this.ordersQueue.add(
@@ -88,8 +96,8 @@ export class OrderService {
     // );
 
     return {
-      ...ordered[0],
-      items: res,
+      ...newOrder,
+      items: savedItems,
     };
     // });
   }

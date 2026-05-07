@@ -9,13 +9,22 @@ import {
   Delete,
   UseGuards,
   Query,
+  Param,
+  ParseIntPipe,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBody,
+  ApiBearerAuth,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { OrderService } from './orders.service';
 import type { CreateOrder, UpdateOrder } from './orders';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
 import { createOrderSchema, updateOrderSchema } from './orders.schema';
-import { CreateOrderDto, UpdateOrderDto, DeleteOrderDto } from './orders.dto';
+import { CreateOrderDto, UpdateOrderDto } from './orders.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -33,7 +42,8 @@ export class OrderController {
   @Get()
   @Roles('user', 'admin', 'staff')
   @ApiOperation({ summary: 'Order list' })
-  @ApiBody({ type: CreateOrderDto })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'offset', required: false, type: Number })
   @ApiResponse({ status: 200, description: 'Successfully logged in.' })
   async getAllOrders(@Query() query: { limit?: string; offset?: string }) {
     this.logger.log(`Get orders request`);
@@ -94,12 +104,10 @@ export class OrderController {
   @Delete(':id')
   @Roles('admin')
   @ApiOperation({ summary: 'Delete a order' })
-  @ApiBody({ type: DeleteOrderDto })
   @ApiResponse({ status: 200, description: 'Order successfully deleted.' })
-  @UsePipes(new ZodValidationPipe(updateOrderSchema))
-  async deleteOrder(@Body() body: { id: number }) {
-    this.logger.log(`Delete order request for: ${body.id}`);
+  async deleteOrder(@Param('id', ParseIntPipe) id: number) {
+    this.logger.log(`Delete order request for: ${id}`);
 
-    return this.order.delete(body.id);
+    return this.order.delete(id);
   }
 }

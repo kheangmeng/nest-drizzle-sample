@@ -1,6 +1,10 @@
 export class CreateOrderDto {
   userId!: number;
   status!: string;
+  items!: {
+    productId: number;
+    qty: number;
+  }[];
   createdAt!: Date;
   updatedAt!: Date;
 }
