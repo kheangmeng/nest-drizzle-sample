@@ -40,7 +40,7 @@ jobs:
 
       - name: Compress source code
         # Packages all files EXCEPT .git and node_modules into a single archive
-        run: tar -czvf app-source.tar.gz --exclude=.git --exclude=node_modules .
+        run: tar -czvf app-source.tar.gz --exclude=.git --exclude=node_modules --exclude=app-source.tar.gz .
 
       - name: Upload Source Archive via SCP
         uses: appleboy/scp-action@master
